@@ -13,3 +13,7 @@
 .externalNativeBuild
 .cxx
 local.properties
+/python/data/frames/*
+/python/data/videos/*
+/python/__pycache__
+/python/.ipynb_checkpoints
