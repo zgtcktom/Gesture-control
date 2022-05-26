@@ -16,11 +16,11 @@ import static com.aidlab.gesturecontrol2.GestureClassifier.landmark_shape;
 public class GestureDetector {
     private static final String TAG = "GestureDetector";
     private final CircularQueue<Float[][]> landmarkQueue;
-    private final GestureClassifier classifier;
+    public final GestureClassifier classifier;
     private final Float[][] emptyLandmarks;
     private final Context context;
 
-    GestureDetector(Context context, GestureClassifier classifier){
+    public GestureDetector(Context context, GestureClassifier classifier){
         this.context = context;
         this.classifier = classifier;
         this.emptyLandmarks = new Float[landmark_shape[0]][landmark_shape[1]];

@@ -2,6 +2,7 @@ package com.aidlab.gesturecontrol2;
 
 import android.content.Context;
 import android.content.res.AssetFileDescriptor;
+import android.widget.Toast;
 
 import org.tensorflow.lite.Interpreter;
 
@@ -14,7 +15,7 @@ import java.util.Objects;
 public class GestureClassifier {
     // Tensorflow lite model handler
 
-    static String[] classes = new String[]{
+    static public String[] classes = new String[]{
             "cursor", "fist", "grab", "negative", "palm", "point", "thumb"
     };
     int TIME_STEP = 10;
@@ -69,6 +70,7 @@ public class GestureClassifier {
             }
         }
         tflite.run(inputs, outputs);
+//        Toast.makeText(ControlService.self, "asdasd", Toast.LENGTH_SHORT).show();
     }
 
     public int getPredictedClass() {

@@ -3,6 +3,7 @@ package com.aidlab.gesturecontrol2;
 import android.content.Context;
 import android.graphics.SurfaceTexture;
 import android.util.Log;
+import android.view.TextureView;
 
 
 import com.google.mediapipe.components.ExternalTextureConverter;
@@ -26,15 +27,22 @@ public class HandTracking {
     public HandTracking(Context context, ResultListener<HandsResult> resultListener) {
         HandsOptions handsOptions =
                 HandsOptions.builder()
-                        .setMode(HandsOptions.STREAMING_MODE)  // API soon to become
+                        .setStaticImageMode(true)
+//                        .setMode(HandsOptions.STREAMING_MODE)  // API soon to become
                         .setMaxNumHands(1)                     // setStaticImageMode(false)
                         .setMinDetectionConfidence(0.5f)
-                        .setRunOnGpu(true).build();
+                        .setRunOnGpu(false).build();
         hands = new Hands(context, handsOptions);
         hands.setErrorListener(
                 (message, e) -> Log.e(TAG, "MediaPipe Hands error:" + message));
 
         hands.setResultListener(resultListener);
+
+//        hands.send();
+    }
+
+    public void read(TextureView textureView){
+        hands.send((textureView.getBitmap()));
     }
 
     public SurfaceTexture start(int width, int height) {

@@ -3,12 +3,20 @@ plugins {
 }
 
 android {
-    compileSdkVersion 30
+    compileSdkVersion rootProject.ext.versionCompiler
+    defaultConfig {
+        applicationId "com.jiangdg.usbcamera"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.versionTarget
+        versionCode rootProject.ext.versionCode
+        versionName rootProject.ext.versionNameString
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
     buildToolsVersion "30.0.3"
 
     defaultConfig {
         applicationId "com.aidlab.gesturecontrol2"
-        minSdkVersion 21
+        minSdkVersion 27
         //noinspection ExpiredTargetSdkVersion
         targetSdkVersion 30
         versionCode 1
@@ -30,12 +38,19 @@ android {
 }
 
 dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
 
     implementation 'androidx.appcompat:appcompat:1.3.1'
     implementation 'com.google.android.material:material:1.4.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.0'
     implementation 'androidx.work:work-runtime:2.4.0'
     implementation 'org.jetbrains:annotations:15.0'
+    
+    implementation 'com.jakewharton:butterknife:10.2.0'
+    annotationProcessor 'com.jakewharton:butterknife-compiler:10.2.0'
+
+    implementation project(':libusbcamera')
+
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
@@ -45,12 +60,16 @@ dependencies {
     implementation 'com.google.mediapipe:hands:latest.release'
 
     // MediaPipe dependencies
-    implementation 'com.google.flogger:flogger:0.6'
-    implementation 'com.google.flogger:flogger-system-backend:0.6'
+    implementation 'com.google.flogger:flogger:0.7.1'
+    implementation 'com.google.flogger:flogger-system-backend:0.7.1'
     implementation 'com.google.code.findbugs:jsr305:3.0.2'
     implementation 'com.google.guava:guava:27.0.1-android'
-    implementation 'com.google.protobuf:protobuf-java:3.11.4'
+//    implementation 'com.google.protobuf:protobuf-java:3.11.4'
 
     // Tensorflow
     implementation 'org.tensorflow:tensorflow-lite-support:0.1.0'
+
+//    implementation("com.serenegiant:common:${commonLibVersion}") {
+//        exclude module: 'support-v4'
+//    }
 }

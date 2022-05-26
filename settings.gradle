@@ -1,2 +1,4 @@
 rootProject.name = "Gesture Control 2"
-include ':app'
+include ':app', ':libusbcamera'
+//include ':libuvccamera'
+//include ':usbCameraCommon'

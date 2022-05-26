@@ -11,9 +11,9 @@ import java.util.function.Function;
 
 class NDArray<T> {
 
-    final TypedArray<T> data;
+    public final TypedArray<T> data;
     public int[] shape;
-    Offset[] offsets;
+    public Offset[] offsets;
 
     public NDArray(int[] shape) {
         this.data = new TypedArray<>(shape);

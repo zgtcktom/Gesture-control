@@ -39,7 +39,7 @@ public class GestureController {
         return clickBuilder.build();
     }
 
-    private enum TouchState {
+    public enum TouchState {
         START, END, MOVE
     }
 

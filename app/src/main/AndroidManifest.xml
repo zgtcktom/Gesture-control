@@ -11,6 +11,9 @@
         tools:ignore="ProtectedPermissions" />
     <uses-feature android:name="android.hardware.camera" />
     <uses-feature android:name="android.hardware.camera.autofocus" />
+    <uses-feature android:name="android.hardware.usb.accessory" />
+    <uses-feature android:name="android.hardware.usb.host" />
+    <uses-feature android:name="android.hardware.camera.external" />
 
     <application
         android:allowBackup="true"

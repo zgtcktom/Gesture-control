@@ -3,6 +3,7 @@ package com.aidlab.gesturecontrol2;
 import android.Manifest;
 import android.accessibilityservice.AccessibilityService;
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -10,13 +11,17 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.gesture.Gesture;
 import android.graphics.PixelFormat;
 import android.graphics.Point;
 import android.graphics.SurfaceTexture;
+import android.hardware.usb.UsbDevice;
 import android.media.AudioManager;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
@@ -27,17 +32,24 @@ import android.view.View;
 import android.view.WindowManager;
 import android.view.accessibility.AccessibilityEvent;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static android.view.WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
 import static android.view.WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;
 import static android.view.WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
+
+import com.jiangdg.usbcamera.UVCCameraHelper;
+import com.serenegiant.usb.widget.CameraViewInterface;
 
 public class ControlService extends AccessibilityService {
 
@@ -50,6 +62,8 @@ public class ControlService extends AccessibilityService {
     private HandTracking handTracking;
     private GestureDetector gestureDetector;
     private TextView result;
+    private UVCCameraHelper mCameraHelper;
+
     BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -110,8 +124,8 @@ public class ControlService extends AccessibilityService {
         WindowManager.LayoutParams topParams = new WindowManager.LayoutParams(
 //                360,
 //                640,
-                480,
                 640,
+                480,
                 TYPE_APPLICATION_OVERLAY,
                 FLAG_NOT_TOUCHABLE | FLAG_NOT_FOCUSABLE,
                 PixelFormat.TRANSLUCENT);
@@ -142,7 +156,7 @@ public class ControlService extends AccessibilityService {
 
         topRenderer=new PreviewRenderer(topView.findViewById(R.id.top), screenWidth, screenHeight);
 
-        PreviewRenderer preview = new PreviewRenderer(previewView.findViewById(R.id.preview), 480, 640);
+        PreviewRenderer preview = new PreviewRenderer(previewView.findViewById(R.id.preview), 640, 480);
 
         AtomicLong prevTimestamp = new AtomicLong(-1);
         handTracking = new HandTracking(this,
@@ -164,10 +178,19 @@ public class ControlService extends AccessibilityService {
         textureView.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
             @Override
             public void onSurfaceTextureAvailable(@NonNull SurfaceTexture surface, int width, int height) {
-                cameraHandler.addOutput(new Surface(textureView.getSurfaceTexture()));
-                cameraHandler.addOutput(new Surface(handTracking.start(480, 640)));
 
-                cameraHandler.open();
+//                mCameraHelper.initUSBMonitor(ControlService.this, textureView, listener, new SurfaceTexture[]{handTracking.start(640, 480), textureView.getSurfaceTexture()});
+                mCameraHelper.initUSBMonitor(ControlService.this, textureView, listener, new SurfaceTexture[]{textureView.getSurfaceTexture()});
+                mCameraHelper.registerUSB();
+                Toast.makeText(ControlService.this, "usb device searching", Toast.LENGTH_SHORT).show();
+//
+//                cameraHandler.addOutput(new Surface(textureView.getSurfaceTexture()));
+//
+//                SurfaceTexture st = handTracking.start(640, 480);
+//                cameraHandler.addOutput(new Surface(st));
+//
+//                cameraHandler.open();
+
             }
 
             @Override
@@ -182,7 +205,9 @@ public class ControlService extends AccessibilityService {
 
             @Override
             public void onSurfaceTextureUpdated(@NonNull SurfaceTexture surface) {
-
+//                Toast.makeText(ControlService.this, "update" + updateCount, Toast.LENGTH_SHORT).show();
+                updateCount++;
+                handTracking.read(textureView);
             }
         });
 
@@ -197,12 +222,20 @@ public class ControlService extends AccessibilityService {
 
         controller=new GestureController(this);
 
+//        CameraViewInterface UVCCameraView = (CameraViewInterface) topView;
+        mCameraHelper = UVCCameraHelper.getInstance(640, 480);
+        mCameraHelper.setDefaultFrameFormat(UVCCameraHelper.FRAME_FORMAT_YUYV);
+
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction("ControlService");
         registerReceiver(broadcastReceiver, intentFilter);
+
+        self = this;
     }
     PreviewRenderer topRenderer;
     private int screenWidth, screenHeight;
+
+    private int updateCount = 0;
 
     GestureController controller;
 
@@ -217,8 +250,112 @@ public class ControlService extends AccessibilityService {
         return NDArray.array(new Float[]{x,y});
     }
 
+    static ControlService self;
+    public static void showShortMsg(String msg) {
+        Toast.makeText(self, msg, Toast.LENGTH_SHORT).show();
+    }
 
-    private enum GestureType {
+    private List<DeviceInfo> getUSBDevInfo() {
+        if(mCameraHelper == null)
+            return null;
+        List<DeviceInfo> devInfos = new ArrayList<>();
+        List<UsbDevice> list = mCameraHelper.getUsbDeviceList();
+        for(UsbDevice dev : list) {
+            DeviceInfo info = new DeviceInfo();
+            info.setPID(dev.getVendorId());
+            info.setVID(dev.getProductId());
+            devInfos.add(info);
+        }
+        return devInfos;
+    }
+
+    private void popCheckDevDialog() {
+//        Toast.makeText(ControlService.this, "usb device detected", Toast.LENGTH_SHORT).show();
+        List<DeviceInfo> infoList = getUSBDevInfo();
+        if (infoList==null || infoList.isEmpty()) {
+            Toast.makeText(ControlService.this, "Find devices failed.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        final List<String> dataList = new ArrayList<>();
+        for(DeviceInfo deviceInfo : infoList){
+            dataList.add("Device：PID_"+deviceInfo.getPID()+" & "+"VID_"+deviceInfo.getVID());
+        }
+        Toast.makeText(ControlService.this, String.join(", ", dataList), Toast.LENGTH_SHORT).show();
+//        AlertCustomDialog.createSimpleListDialog(this, "Please select USB devcie", dataList, new AlertCustomDialog.OnMySelectedListener() {
+//            @Override
+//            public void onItemSelected(int position) {
+//                Toast.makeText(ControlService.this,  "usb device selected: "+position, Toast.LENGTH_SHORT).show();
+////                mCameraHelper.requestPermission(position);
+//            }
+//        });
+        mCameraHelper.requestPermission(dataList.size()-1);
+    }
+
+
+    private boolean isRequest = false;
+    private boolean isPreview;
+
+    private UVCCameraHelper.OnMyDevConnectListener listener = new UVCCameraHelper.OnMyDevConnectListener() {
+
+        @Override
+        public void onAttachDev(UsbDevice device) {
+            // request open permission
+            if (!isRequest) {
+                isRequest = true;
+            }
+            popCheckDevDialog();
+        }
+
+
+        @Override
+        public void onDettachDev(UsbDevice device) {
+            // close camera
+            if (isRequest) {
+                isRequest = false;
+                mCameraHelper.closeCamera();
+                showShortMsg(device.getDeviceName() + " is out");
+            }
+        }
+
+        @Override
+        public void onConnectDev(UsbDevice device, boolean isConnected, SurfaceTexture[] outputs) {
+            if (!isConnected) {
+                showShortMsg("fail to connect,please check resolution params");
+                isPreview = false;
+            } else {
+                isPreview = true;
+                showShortMsg("connecting");
+                // initialize seekbar
+                // need to wait UVCCamera initialize over
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            Thread.sleep(2500);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        Looper.prepare();
+                        if(mCameraHelper != null && mCameraHelper.isCameraOpened()) {
+//                            mSeekBrightness.setProgress(mCameraHelper.getModelValue(UVCCameraHelper.MODE_BRIGHTNESS));
+//                            mSeekContrast.setProgress(mCameraHelper.getModelValue(UVCCameraHelper.MODE_CONTRAST));
+                            showShortMsg(Arrays.toString(outputs));
+                            showShortMsg("connected");
+                        }
+                        Looper.loop();
+                    }
+                }).start();
+            }
+        }
+
+        @Override
+        public void onDisConnectDev(UsbDevice device) {
+            showShortMsg("disconnecting");
+        }
+    };
+
+
+    public enum GestureType {
         CURSOR, GRAB, POINT, THUMB, FIST, PALM, NEGATIVE
     }
     private GestureType prevGesture = GestureType.NEGATIVE;
@@ -248,11 +385,13 @@ public class ControlService extends AccessibilityService {
         else if(s1.equals("palm")) gesture=GestureType.PALM;
         else gesture=GestureType.NEGATIVE;
 
-        NDArray<Float> screenPosition=NDArray.div(
-                NDArray.add(
-                        screenPosition(landmarks.get(4)).astype(Float::doubleValue),
-                        screenPosition(landmarks.get(8)).astype(Float::doubleValue)),
-                NDArray.array(new Double[]{2.0})).astype(Double::floatValue);
+//        NDArray<Float> screenPosition=NDArray.div(
+//                NDArray.add(
+//                        screenPosition(landmarks.get(4)).astype(Float::doubleValue),
+//                        screenPosition(landmarks.get(8)).astype(Float::doubleValue)),
+//                NDArray.array(new Double[]{2.0})).astype(Double::floatValue);
+//
+        NDArray<Float> screenPosition=screenPosition(landmarks.get(8)).astype(Float::doubleValue).astype(Double::floatValue);
         int x=Math.round(screenPosition.getValue(0)*screenWidth);
         int y=Math.round(screenPosition.getValue(1)*screenHeight);
 
@@ -278,7 +417,7 @@ public class ControlService extends AccessibilityService {
 
         topRenderer.clear();
         if(gesture==GestureType.CURSOR || gesture==GestureType.GRAB){
-            topRenderer.drawCircle(x, y-100);
+            topRenderer.drawCircle(x, y-110);
 
             if(touchStart){
                 if(gesture==GestureType.GRAB){

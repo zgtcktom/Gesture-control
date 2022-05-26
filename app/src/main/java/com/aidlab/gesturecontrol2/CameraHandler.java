@@ -71,11 +71,26 @@ public class CameraHandler {
         this.context = context;
         this.manager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
 
+//        Toast.makeText(context, String.valueOf(context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_EXTERNAL)), Toast.LENGTH_LONG).show();
+//        manager.registerAvailabilityCallback(new CameraManager.AvailabilityCallback() {
+//                                                 @Override
+//                                                 public void onCameraAvailable(@NonNull String cameraId) {
+//                                                     super.onCameraAvailable(cameraId);
+//                                                     Toast.makeText(context, cameraId, Toast.LENGTH_LONG).show();
+//                                                 }
+//                                             }
+//        , null);
         Log.d(TAG, "Camera size: " + getSize());
     }
 
     public String defaultId() {
         try {
+//            Log.d(TAG, Arrays.toString(manager.getCameraIdList()));
+//            Toast.makeText(context, Arrays.toString(manager.getCameraIdList()), Toast.LENGTH_LONG).show();
+//            int id = manager.getCameraIdList().length > 2? 3:0;
+//            if(id == 0){
+//                return "/dev/video2";
+//            }
             return manager.getCameraIdList()[0];
         } catch (CameraAccessException e) {
             e.printStackTrace();
