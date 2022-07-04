@@ -124,8 +124,8 @@ public class ControlService extends AccessibilityService {
         WindowManager.LayoutParams topParams = new WindowManager.LayoutParams(
 //                360,
 //                640,
-                640,
-                480,
+                (int)(640*3),
+                480*3,
                 TYPE_APPLICATION_OVERLAY,
                 FLAG_NOT_TOUCHABLE | FLAG_NOT_FOCUSABLE,
                 PixelFormat.TRANSLUCENT);
@@ -136,7 +136,7 @@ public class ControlService extends AccessibilityService {
 
         textureView = previewView.findViewById(R.id.texture);
         textureView.setOpaque(false);
-        textureView.setAlpha(0.5f);
+        textureView.setAlpha(0.75f);
         result = previewView.findViewById(R.id.result);
 
 
@@ -156,7 +156,7 @@ public class ControlService extends AccessibilityService {
 
         topRenderer=new PreviewRenderer(topView.findViewById(R.id.top), screenWidth, screenHeight);
 
-        PreviewRenderer preview = new PreviewRenderer(previewView.findViewById(R.id.preview), 640, 480);
+        PreviewRenderer preview = new PreviewRenderer(previewView.findViewById(R.id.preview), (int)(640*3), 480*3);
 
         AtomicLong prevTimestamp = new AtomicLong(-1);
         handTracking = new HandTracking(this,

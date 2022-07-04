@@ -52,7 +52,7 @@ public class PreviewRenderer {
 
     public void render(List<NormalizedLandmark> result) {
         Paint linePaint = new Paint();
-        linePaint.setColor(Color.rgb(201, 255, 160));
+        linePaint.setColor(Color.rgb(210,216,227));
         linePaint.setStrokeWidth(10);
         for (Hands.Connection connection : Hands.HAND_CONNECTIONS) {
             NormalizedLandmark start = result.get(connection.start());
@@ -66,13 +66,13 @@ public class PreviewRenderer {
         }
 
         Paint landmarkPaint = new Paint();
-        landmarkPaint.setColor(Color.rgb(154, 184, 143));
+        landmarkPaint.setColor(Color.rgb(246,196,35));
         for (NormalizedLandmark landmark : result) {
             Log.d(TAG, String.valueOf(landmark.getX()));
             canvas.drawCircle(
                     landmark.getX() * width,
                     landmark.getY() * height,
-                    7,
+                    7*2,
                     landmarkPaint);
         }
     }
